@@ -1,0 +1,17 @@
+# OrderService/graphql/schema.graphql
+
+scalar DateTime @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\DateTime")
+
+type Query {
+    orders: [Order!]! @all
+    order(id: ID! @find(model: "Order")): Order
+}
+
+type Order {
+    id: ID!
+    user_id: ID!
+    total_amount: Float!
+    status: String!
+    created_at: DateTime!
+    updated_at: DateTime!
+}

@@ -1,0 +1,151 @@
+version: "3.8"
+
+services:
+  user-service:
+    build:
+      context: ./UserService
+    container_name: user-service
+    volumes:
+      - ./UserService:/var/www
+    networks:
+      - laravel
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq: 
+        condition: service_healthy 
+    environment:
+      DB_CONNECTION: mysql
+      APP_DEBUG: ${APP_DEBUG:-true}
+      APP_ENV: ${APP_ENV:-local}
+      APP_URL: http://localhost:8001
+      DB_HOST: mysql
+      DB_DATABASE: userdb
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      QUEUE_CONNECTION: rabbitmq 
+    ports:
+      - "8001:8000"
+    command: php artisan serve --host=0.0.0.0 --port=8000
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
+  product-service:
+    build:
+      context: ./ProductService
+    container_name: product-service
+    volumes:
+      - ./ProductService:/var/www
+    networks:
+      - laravel
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq: 
+        condition: service_healthy 
+    environment:
+      DB_CONNECTION: mysql
+      APP_DEBUG: ${APP_DEBUG:-true}
+      APP_ENV: ${APP_ENV:-local}
+      APP_URL: http://localhost:8002
+      DB_HOST: mysql
+      DB_DATABASE: productdb
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      QUEUE_CONNECTION: rabbitmq 
+    ports:
+      - "8002:8000"
+    command: php artisan serve --host=0.0.0.0 --port=8000
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
+  order-service:
+    build:
+      context: ./OrderService
+    container_name: order-service
+    volumes:
+      - ./OrderService:/var/www
+    networks:
+      - laravel
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq: 
+        condition: service_healthy 
+    environment:
+      DB_CONNECTION: mysql
+      APP_DEBUG: ${APP_DEBUG:-true}
+      APP_ENV: ${APP_ENV:-local}
+      APP_URL: http://localhost:8003
+      DB_HOST: mysql
+      DB_DATABASE: orderdb
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      QUEUE_CONNECTION: rabbitmq 
+    ports:
+      - "8003:8000"
+    command: php artisan serve --host=0.0.0.0 --port=8000
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
+  mysql:
+    image: mysql:8
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - mysql-data:/var/lib/mysql
+    ports:
+      - "3307:3306"
+    networks:
+      - laravel
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 20s
+      retries: 10
+      start_period: 30s
+
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - laravel
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+
+  phpmyadmin: 
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    restart: always
+    environment:
+      PMA_HOST: mysql 
+      PMA_PORT: 3306  
+      MYSQL_ROOT_PASSWORD: root 
+    ports:
+      - "8080:80" 
+    networks:
+      - laravel
+    depends_on:
+      mysql:
+        condition: service_healthy 
+
+volumes:
+  mysql-data:
+
+networks:
+  laravel:
